@@ -20,13 +20,12 @@ namespace daw {
 			FilteredRange& operator=(FilteredRange rhs) {
 				m_value_refs = std::move( rhs.m_value_refs );
 				m_pred_include = std::move( rhs.m_pred_include );
+				return *this;
 			}
 
 			FilteredRange( FilteredRange&& other ): m_value_refs( std::move( other.m_value_refs ) ), m_pred_include( std::move( other.m_pred_include ) ) { }
 			FilteredRange( ) = delete;
 			FilteredRange( const FilteredRange& ) = default;
-
-			bool operator==(const FilteredRange&) const = delete;
 
 			virtual ~FilteredRange( ) = default;
 
@@ -157,20 +156,20 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange replace( value_type old_value, value_type new_value ) {
+			FilteredRange replace( value_type old_value, value_type new_value ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::replace( result.begin( ), result.end( ), old_value, new_value );
 				return result;
 			}
 
 			template<typename UnaryPredicate>
-			FilteredRange replace_if( UnaryPredicate pred, value_type new_value ) {
+			FilteredRange replace_if( UnaryPredicate pred, value_type new_value ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::replace_if( result.begin( ), result.end( ), pred, new_value );
 				return result;
 			}
 
-			FilteredRange union( FilteredRange other) {
+			FilteredRange set_union(FilteredRange other) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );	
@@ -178,7 +177,7 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange intersection(FilteredRange other) {
+			FilteredRange set_intersection( FilteredRange other ) const {
 					auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
@@ -186,7 +185,7 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange difference( FilteredRange other ) {
+			FilteredRange set_difference( FilteredRange other ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
@@ -194,11 +193,41 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange symmetric_difference( FilteredRange other ) {
+			FilteredRange set_symmetric_difference( FilteredRange other ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
 				std::set_symmetric_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				return result;
+			}
+
+			template<typename EqualToCompare = std::equal_to<value_type>>
+			FilteredRange duplicates( EqualToCompare comp = EqualToCompare( ) ) const {
+				auto result = copy_of_me( ).do_filter( ).sort( );
+				auto new_vals = std::vector<std::reference_wrapper<value_type>>( );
+				auto it = result.begin( );
+				while( it != result.end( ) ) {
+					auto cur_val = *it;
+					if( (it + 1) != result.end( ) && comp( cur_val, *(it + 1) ) ) {
+						new_vals.push_back( cur_val );
+					}
+					++it;						
+					while( it != result.end( ) && comp( cur_val, *it ) ) {
+						++it;
+					}
+				}
+				result.m_value_refs = new_vals;
+				return result;
+			}
+
+			template<typename EqualToCompare = std::equal_to<value_type>>
+			FilteredRange stable_duplicates( EqualToCompare comp = EqualToCompare( ) ) const {
+				auto valid_vals = duplicates( comp );
+				auto result = copy_of_me( )
+					.do_filter( )
+					.where( [&valid_vals]( const value_type& value ) { return valid_vals.contains( value ); } )
+					.stable_unique( )
+					.do_filter( ).clear_where( );
 				return result;
 			}
 
@@ -211,6 +240,10 @@ namespace daw {
 					}
 				}
 				return false;
+			}
+
+			bool empty( ) const {
+				return m_value_refs.empty( );
 			}
 
 			template<typename Func>
