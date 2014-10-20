@@ -92,7 +92,7 @@ namespace daw {
 				return retval;
 			}
 
-			FilteredRange clear_filters( ) const {
+			FilteredRange clear_where( ) const {
 				auto result = copy_of_me( );
 				result.do_filter( );
 				result.m_pred_include.clear( );
