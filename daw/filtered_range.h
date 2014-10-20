@@ -29,21 +29,36 @@ namespace daw {
 
 			virtual ~FilteredRange( ) = default;
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Adds a predicate that when false for a value 
+			/// filters out the value.  
 			FilteredRange where( predicate_type predicate ) const {
 				auto result = copy_of_me( );
 				result.m_pred_include.push_back( predicate );
 				return result;
 			}
+			
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Clears all where predicates
+			FilteredRange clear_where( ) const {
+				auto result = copy_of_me( ).do_filter( );
+				result.m_pred_include.clear( );
+				return result;
+			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: On every valid element do something
 			template<typename Func>
 			FilteredRange for_each( Func func ) const {
 				auto result = copy_of_me( ).do_filter( );
-				for( auto& current_value : result.m_value_refs ) {
+				for( const auto current_value : result.m_value_refs ) {
 					func( current_value );
 				}
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Copy all valid values to a std::vector
 			std::vector<value_type> to_vector( ) const {
 				auto result = std::vector<value_type>( );
 				auto filt_iters = get_filtered_iterators( );
@@ -53,6 +68,9 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Copy all valid values to the provided range up to the
+			/// smallest list.
 			template<typename Iter>
 			void copy_to( Iter first_inclusive, Iter last_exclusive ) const {
 				auto filt_iter = get_filtered_iterators( );
@@ -66,12 +84,8 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange clear_where( ) const {
-				auto result = copy_of_me( ).do_filter( );
-				result.m_pred_include.clear( );
-				return result;
-			}
-
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Append the values in the range to the current range
 			template<typename Iter>
 			FilteredRange append( Iter first_inclusive, Iter last_exclusive ) const {
 				auto result = copy_of_me( );
@@ -81,13 +95,22 @@ namespace daw {
 				return result;
 			}
 
-			template<typename EqualToCompare = std::less<value_type>>
-			FilteredRange sort( EqualToCompare comp = EqualToCompare( ) ) const {
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Sort the elements in the range into ascending order.
+			/// The elements are compared using operator< or the optional comp.
+			/// Equivalent elements are not guaranteed to keep their original 
+			/// relative order (see stable_sort)
+			template<typename LessThanCompare = std::less<value_type>>
+			FilteredRange sort( LessThanCompare comp = LessThanCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::sort( result.begin( ), result.end( ), comp );
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Sort the elements in the range into ascending order.
+			/// The elements are compared using operator< or the optional comp.
+			/// Preserves the relative order of the elements with equivalent values
 			template<typename EqualToCompare = std::less<value_type>>
 			FilteredRange stable_sort( EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -95,6 +118,8 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Removes all consecutive duplicate elements from the range
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			FilteredRange unique( EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -103,6 +128,9 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Sorts all elements and remove all consecutive duplicate
+			/// elements
 			template<typename EqualToCompare = std::less<value_type>, typename EqualCompare = std::equal_to<value_type>>
 			FilteredRange sorted_unique( EqualToCompare scomp = EqualToCompare( ), EqualCompare ucomp = EqualCompare( ) ) const {
 				auto result = sort( scomp );
@@ -111,6 +139,9 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Removes all duplicate elements from the range maintaining order.
+			/// After the initial element, no other duplicates are included.
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			FilteredRange stable_unique( EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = std::vector<std::reference_wrapper<value_type>>( );
@@ -123,6 +154,13 @@ namespace daw {
 				return retval;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Rearranges the elements of the range in such a way that 
+			/// all the elements for which pred returns true precede all those for
+			/// which it returns false. The relative ordering within each group is not 
+			/// necessarily the same as before the call. See stable_partition for a
+			/// function with a similar behavior but with stable ordering within each 
+			/// group.
 			template<typename UnaryPredicate>
 				FilteredRange partiton( UnaryPredicate pred ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -130,6 +168,11 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Rearranges the elements of the range in such a way that 
+			/// all the elements for which pred returns true precede all those for
+			/// which it returns false.  The relative order of elements within each 
+			/// group is preserved.
 			template<typename UnaryPredicate>
 			FilteredRange stable_partiton( UnaryPredicate pred ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -137,12 +180,19 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Reverses the order of the elements in the range
 			FilteredRange reverse( ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::reverse( result.begin( ), result.end( ), pred );
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Rearranges the elements in the range randomly.  The 
+			/// function swaps the value of each element with that of some other 
+			/// randomly picked element.  The function gen determines which element is 
+			/// picked in every case.
 			template<typename RandomNumberGenerator>
 			FilteredRange random_shuffle( RandomNumberGenerator rnd ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -150,18 +200,31 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Rearranges the elements in the range randomly.  The 
+			/// function swaps the value of each element with that of some other 
+			/// randomly picked element.  The function uses some unspecified 
+			/// source of randomness
 			FilteredRange random_shuffle( ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::random_shuffle( result.begin( ), result.end( ) );
 				return result;
 			}
 
-			FilteredRange replace( value_type old_value, value_type new_value ) const {
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Replaces all elements equal to old_value with 
+			/// new_value in the range.  By default ituses operator== to compare 
+			/// the elements, otherwise it uses the given binary predicate comp. 
+			template<typename EqualToCompare = std::equal_to<value_type>>
+			FilteredRange replace( value_type old_value, value_type new_value, EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::replace( result.begin( ), result.end( ), old_value, new_value );
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Replaces all elements satisfying pred with
+			/// new_value in the range.
 			template<typename UnaryPredicate>
 			FilteredRange replace_if( UnaryPredicate pred, value_type new_value ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -169,38 +232,65 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange set_union(FilteredRange other) const {
+
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the union of two 
+			/// FilteredRange's formed by the elements that are present in either one, 
+			/// or in both. 
+			template<typename LessThanCompare = std::less<value_type>>
+			FilteredRange set_union( FilteredRange other, LessThanCompare comp = LessThanCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );	
-				std::set_union( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				auto new_last = std::set_union( result.begin( ), result.end( ), other.begin( ), other.end( ), comp );
+				result.m_value_refs.erase( new_last, result.end( ) );
 				return result;
 			}
 
-			FilteredRange set_intersection( FilteredRange other ) const {
-					auto result = copy_of_me( ).do_filter( ).sort( );
-				other.do_filter( ).sort( );
-				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
-				std::set_intersection( result.begin( ), result.end( ), other.begin( ), other.end( ) );
-				return result;
-			}
-
-			FilteredRange set_difference( FilteredRange other ) const {
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the intersection of two 
+			/// FilteredRange's formed by only by the elements that are present
+			/// in both
+			template<typename LessThanCompare = std::less<value_type>>
+			FilteredRange set_intersection( FilteredRange other, LessThanCompare comp = LessThanCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
-				std::set_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				auto new_last = std::set_intersection( result.begin( ), result.end( ), other.begin( ), other.end( ), comp );
+				result.m_value_refs.erase( new_last, result.end( ) );
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the difference of two 
+			/// FilteredRange's formed by the elements that are present in the first 
+			/// set, but not in the second one
+			template<typename LessThanCompare = std::less<value_type>>
+			FilteredRange set_difference( FilteredRange other, LessThanCompare comp = LessThanCompare( ) ) const {
+				auto result = copy_of_me( ).do_filter( ).sort( );
+				other.do_filter( ).sort( );
+				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
+				auto new_last = std::set_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				result.m_value_refs.erase( new_last, result.end( ) );
+				return result;
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the difference of two 
+			/// FilteredRange's formed by the elements that are present one of the
+			/// sets but not the other
 			FilteredRange set_symmetric_difference( FilteredRange other ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
 				other.do_filter( ).sort( );
 				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
-				std::set_symmetric_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				auto new_last = std::set_symmetric_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				result.m_value_refs.erase( new_last, result.end( ) );
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the sorted values that have 
+			/// duplicates
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			FilteredRange duplicates( EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( ).sort( );
@@ -220,6 +310,10 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Constructs a new range with the values that have 
+			/// duplicates.  The first value is included, excluding all successive
+			/// repeats
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			FilteredRange stable_duplicates( EqualToCompare comp = EqualToCompare( ) ) const {
 				auto valid_vals = duplicates( comp );
@@ -231,6 +325,8 @@ namespace daw {
 				return result;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Returns a boolean indicating if value is in the range
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			bool contains( value_type value, EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
@@ -242,14 +338,19 @@ namespace daw {
 				return false;
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Returns a boolean indicating if the range is empty
 			bool empty( ) const {
 				return m_value_refs.empty( );
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			/// Summary: Returns a FilteredRange with the result of calling func on it
 			template<typename Func>
-			FilteredRange& call(Func func) {
-				func( *this );
-				return *this;
+			FilteredRange call(Func func) const {
+				auto result = copy_of_me( ).do_filter( );
+				func( result );
+				return result;
 			}
 
 		private:

@@ -26,7 +26,7 @@ int main( int argc, char **arv ) {
 		.stable_unique( ).for_each( show_int )
 		.call([]( const daw::range::FilteredRange<int>& ) { std::cout << "-----\n"; })
 		.sort( ).for_each( show_int );
-
+	
 	std::cout << "has 5 " << tmp.contains( 5 ) << "\n";
 	std::cout << "has 4 " << tmp.contains( 4 ) << "\n";
 
