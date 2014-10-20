@@ -38,8 +38,7 @@ namespace daw {
 
 			template<typename Func>
 			FilteredRange for_each( Func func ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
+				auto result = copy_of_me( ).do_filter( );
 				for( auto& current_value : result.m_value_refs ) {
 					func( current_value );
 				}
@@ -69,8 +68,7 @@ namespace daw {
 			}
 
 			FilteredRange clear_where( ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
+				auto result = copy_of_me( ).do_filter( );
 				result.m_pred_include.clear( );
 				return result;
 			}
@@ -86,18 +84,23 @@ namespace daw {
 
 			template<typename EqualToCompare = std::less<value_type>>
 			FilteredRange sort( EqualToCompare comp = EqualToCompare( ) ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::sort( result.m_value_refs.begin( ), result.m_value_refs.end( ), comp );
+				auto result = copy_of_me( ).do_filter( );
+				std::sort( result.begin( ), result.end( ), comp );
+				return result;
+			}
+
+			template<typename EqualToCompare = std::less<value_type>>
+			FilteredRange stable_sort( EqualToCompare comp = EqualToCompare( ) ) const {
+				auto result = copy_of_me( ).do_filter( );
+				std::stable_sort( result.begin( ), result.end( ), comp );
 				return result;
 			}
 
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			FilteredRange unique( EqualToCompare comp = EqualToCompare( ) ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				auto new_last = std::unique( result.m_value_refs.begin( ), result.m_value_refs.end( ), comp );
-				result.m_value_refs.erase( new_last, result.m_value_refs.end( ) );
+				auto result = copy_of_me( ).do_filter( );
+				auto new_last = std::unique( result.begin( ), result.end( ), comp );
+				result.m_value_refs.erase( new_last, result.end( ) );
 				return result;
 			}
 
@@ -123,46 +126,85 @@ namespace daw {
 
 			template<typename UnaryPredicate>
 				FilteredRange partiton( UnaryPredicate pred ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::partition( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
+				auto result = copy_of_me( ).do_filter( );
+				std::partition( result.begin( ), result.end( ), pred );
 				return result;
 			}
 
 			template<typename UnaryPredicate>
 			FilteredRange stable_partiton( UnaryPredicate pred ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::stable_partition( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
+				auto result = copy_of_me( ).do_filter( );
+				std::stable_partition( result.begin( ), result.end( ), pred );
 				return result;
 			}
 
 			FilteredRange reverse( ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::reverse( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
+				auto result = copy_of_me( ).do_filter( );
+				std::reverse( result.begin( ), result.end( ), pred );
 				return result;
 			}
 
 			template<typename RandomNumberGenerator>
 			FilteredRange random_shuffle( RandomNumberGenerator rnd ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::random_shuffle( result.m_value_refs.begin( ), result.m_value_refs.end( ), rnd );
+				auto result = copy_of_me( ).do_filter( );
+				std::random_shuffle( result.begin( ), result.end( ), rnd );
 				return result;
 			}
 
 			FilteredRange random_shuffle( ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
-				std::random_shuffle( result.m_value_refs.begin( ), result.m_value_refs.end( ) );
+				auto result = copy_of_me( ).do_filter( );
+				std::random_shuffle( result.begin( ), result.end( ) );
+				return result;
+			}
+
+			FilteredRange replace( value_type old_value, value_type new_value ) {
+				auto result = copy_of_me( ).do_filter( );
+				std::replace( result.begin( ), result.end( ), old_value, new_value );
+				return result;
+			}
+
+			template<typename UnaryPredicate>
+			FilteredRange replace_if( UnaryPredicate pred, value_type new_value ) {
+				auto result = copy_of_me( ).do_filter( );
+				std::replace_if( result.begin( ), result.end( ), pred, new_value );
+				return result;
+			}
+
+			FilteredRange union( FilteredRange other) {
+				auto result = copy_of_me( ).do_filter( ).sort( );
+				other.do_filter( ).sort( );
+				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );	
+				std::set_union( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				return result;
+			}
+
+			FilteredRange intersection(FilteredRange other) {
+					auto result = copy_of_me( ).do_filter( ).sort( );
+				other.do_filter( ).sort( );
+				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
+				std::set_intersection( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				return result;
+			}
+
+			FilteredRange difference( FilteredRange other ) {
+				auto result = copy_of_me( ).do_filter( ).sort( );
+				other.do_filter( ).sort( );
+				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
+				std::set_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
+				return result;
+			}
+
+			FilteredRange symmetric_difference( FilteredRange other ) {
+				auto result = copy_of_me( ).do_filter( ).sort( );
+				other.do_filter( ).sort( );
+				m_pred_include.insert( m_pred_include.end( ), other.m_pred_include.begin( ), other.m_pred_include.end( ) );
+				std::set_symmetric_difference( result.begin( ), result.end( ), other.begin( ), other.end( ) );
 				return result;
 			}
 
 			template<typename EqualToCompare = std::equal_to<value_type>>
 			bool contains( value_type value, EqualToCompare comp = EqualToCompare( ) ) const {
-				auto result = copy_of_me( );
-				result.do_filter( );
+				auto result = copy_of_me( ).do_filter( );
 				for( auto current_value : result.m_value_refs ) {
 					if( comp( value, current_value ) ) {
 						return true;
@@ -197,11 +239,12 @@ namespace daw {
 				return FilteredRange( *this );
 			}
 
-			void do_filter( ) {
+			FilteredRange& do_filter( ) {
 				if( !m_pred_include.empty( ) ) {
 					auto new_last = std::remove_if( begin( ), end( ), [&]( const value_type& value ) { return !value_included( value ); } );
 					m_value_refs.erase( new_last, end( ) );
 				}
+				return *this;
 			}
 
 			bool value_included( const value_type& value ) const {
