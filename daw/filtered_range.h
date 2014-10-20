@@ -2,17 +2,19 @@
 
 #include <algorithm>
 #include <boost/iterator/filter_iterator.hpp>
+#include <exception>
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 namespace daw {
 	namespace range {
 		template<typename value_type>
 		class FilteredRange {
-		public:
-			using predicate_type = std::function < bool( value_type ) > ;
+		public:			
 
 			template<typename Iter>
 			FilteredRange( Iter first_inclusive, Iter last_exclusive ): m_value_refs( first_inclusive, last_exclusive ), m_pred_include( ) { }
@@ -28,6 +30,8 @@ namespace daw {
 			FilteredRange( const FilteredRange& ) = default;
 
 			virtual ~FilteredRange( ) = default;
+
+			using predicate_type = std::function < bool( value_type ) >;
 
 			//////////////////////////////////////////////////////////////////////////
 			/// Summary: Adds a predicate that when false for a value 
@@ -420,5 +424,73 @@ namespace daw {
 		auto make_filtered_range( Container& container ) -> FilteredRange < typename std::iterator_traits<decltype(std::begin( container ))>::value_type > {
 			return FilteredRange<typename std::iterator_traits<decltype(std::begin( container ))>::value_type>( std::begin( container ), std::end( container ) );
 		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> less_then( value_type value ) {
+			return[value]( const value_type& test_val ) {
+				return test_val < value;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> less_then_equal( value_type value ) {
+			return[value]( const value_type& test_val ) {
+				return test_val <= value;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> greater_then( value_type value ) {
+			return[value]( const value_type& test_val ) {
+				return test_val > value;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> greater_then_equal( value_type value ) {
+			return[value]( const value_type& test_val ) {
+				return test_val >= value;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> equals( value_type value ) {
+			return[value]( const value_type& test_val ) {
+				return test_val == value;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> logic_or( std::function <bool( value_type )> lhs, std::function <bool( value_type )> rhs ) {
+			return[lhs, rhs]( const value_type& test_val ) {
+				return lhs( test_val ) || rhs( test_val );
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> is_even( ) {
+			return[]( const value_type& test_val ) {
+				return 0 == test_val % 2;
+			};
+		}
+
+		template<typename value_type>
+		std::function <bool( value_type )> is_odd( ) {
+			return[]( const value_type& test_val ) {
+				return 0 != test_val % 2;
+			};
+		}
+
+
+		template<typename value_type>
+		std::function<void( const value_type& )> display_item( bool new_line = true ) {
+			return[new_line]( const value_type& value ) {
+				std::cout << value;
+				if( new_line ) {
+					std::cout << "\n";
+				}
+			};
+		}
+
 	}	// namespace range	
 }	// namespace daw
