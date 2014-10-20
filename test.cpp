@@ -16,7 +16,11 @@ int main( int argc, char **arv ) {
 		return 0 == x % 2;
 	};
 
-	auto tmp = daw::range::make_filtered_range( test_values ).where( is_even ).for_each( on_each ).clear_where( );
+	auto under_ten = []( const int& x ) {
+		return x < 10;
+	};
+
+	auto tmp = daw::range::make_filtered_range( test_values ).where( is_even ).where( under_ten ).for_each( on_each ).clear_where( );
 	std::cout << "---\n";
 	auto tmp2 = tmp.append( test_values2.begin( ), test_values2.end( ) );
 	std::cout << "---\n";

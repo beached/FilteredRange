@@ -140,11 +140,11 @@ namespace daw {
 					return true;
 				}
 				for( auto& included : m_pred_include ) {
-					if( included( value ) ) {
-						return true;
+					if( !included( value ) ) {
+						return false;
 					}
 				}
-				return false;
+				return true;
 			}
 
 			template<typename EqualToCompare = std::equal_to<value_type>>
