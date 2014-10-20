@@ -15,14 +15,14 @@ namespace daw {
 			using predicate_type = std::function < bool( value_type ) > ;
 
 			template<typename Iter>
-			FilteredRange( Iter first_inclusive, Iter last_exclusive ): m_value_refs( first_inclusive, last_exclusive ), m_predicate_stack( ) { }
+			FilteredRange( Iter first_inclusive, Iter last_exclusive ): m_value_refs( first_inclusive, last_exclusive ), m_pred_include( ) { }
 
 			FilteredRange& operator=(FilteredRange rhs) {
 				m_value_refs = std::move( rhs.m_value_refs );
-				m_predicate_stack = std::move( rhs.m_predicate_stack );
+				m_pred_include = std::move( rhs.m_pred_include );
 			}
 
-			FilteredRange( FilteredRange&& other ): m_value_refs( std::move( other.m_value_refs ) ), m_predicate_stack( std::move( other.m_predicate_stack ) ) { }
+			FilteredRange( FilteredRange&& other ): m_value_refs( std::move( other.m_value_refs ) ), m_pred_include( std::move( other.m_pred_include ) ) { }
 			FilteredRange( ) = delete;
 			FilteredRange( const FilteredRange& ) = default;
 
@@ -32,7 +32,7 @@ namespace daw {
 
 			FilteredRange where( predicate_type predicate ) const {
 				auto result = copy_of_me( );
-				result.m_predicate_stack.push_back( std::move( predicate ) );
+				result.m_pred_include.push_back( predicate );
 				return result;
 			}
 
@@ -88,8 +88,24 @@ namespace daw {
 						result.push_back( current_value );
 					}
 				}
-				auto retval = FilteredRange( result, m_predicate_stack );
+				auto retval = FilteredRange( result, m_pred_include );
 				return retval;
+			}
+
+			FilteredRange clear_filters( ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				result.m_pred_include.clear( );
+				return result;
+			}
+
+			template<typename Iter>
+			FilteredRange append( Iter first_inclusive, Iter last_exclusive ) const {
+				auto result = copy_of_me( );
+				for( auto it = first_inclusive; it != last_exclusive; ++it ) {
+					result.m_value_refs.push_back( std::reference_wrapper<value_type>( *it ) );
+				}
+				return result;
 			}
 
 		private:
@@ -98,7 +114,7 @@ namespace daw {
 			using filtered_iterator = boost::filter_iterator < predicate_ref_type, iter_type > ;
 
 			std::vector<std::reference_wrapper<value_type>> m_value_refs;
-			std::vector<predicate_type> m_predicate_stack;
+			std::vector<predicate_type> m_pred_include;
 
 			iter_type begin( ) {
 				return m_value_refs.begin( );
@@ -113,13 +129,18 @@ namespace daw {
 			}
 
 			void do_filter( ) {
-				auto new_last = std::remove_if( begin( ), end( ), [&]( const value_type& value ) { return !value_included( value ); } );
-				m_value_refs.erase( new_last, end( ) );
+				if( !m_pred_include.empty( ) ) {
+					auto new_last = std::remove_if( begin( ), end( ), [&]( const value_type& value ) { return !value_included( value ); } );
+					m_value_refs.erase( new_last, end( ) );
+				}
 			}
 
 			bool value_included( const value_type& value ) const {
-				for( auto& predicate : m_predicate_stack ) {
-					if( predicate( value ) ) {
+				if( m_pred_include.empty( ) ) {
+					return true;
+				}
+				for( auto& included : m_pred_include ) {
+					if( included( value ) ) {
 						return true;
 					}
 				}
@@ -138,7 +159,7 @@ namespace daw {
 				return result;
 			}
 
-			FilteredRange( const std::vector<std::reference_wrapper<value_type>>& value_refs, std::vector<predicate_type> predicate_stack ): m_value_refs( value_refs ), m_predicate_stack( predicate_stack ) { }
+			FilteredRange( const std::vector<std::reference_wrapper<value_type>>& value_refs, std::vector<predicate_type> predicate_stack ): m_value_refs( value_refs ), m_pred_include( predicate_stack ) { }
 
 			std::pair<filtered_iterator, filtered_iterator> get_filtered_iterators( ) {
 				auto pred = [&]( std::reference_wrapper<value_type> value ) { return value_included( value.get( ) ); };
