@@ -22,13 +22,13 @@ int main( int argc, char **arv ) {
 
 	auto tmp = daw::range::make_filtered_range( test_values )
 		.where( is_even )
-		.where( under_ten )
-		.for_each( show_int ).clear_where( )
 		.append( test_values2.begin( ), test_values2.end( ) )
-		.stable_unique( ).for_each( show_int );
+		.stable_unique( ).for_each( show_int )
+		.call([]( const daw::range::FilteredRange<int>& ) { std::cout << "-----\n"; })
+		.sort( ).for_each( show_int );
 
-	tmp.where( is_even ).for_each( show_int );
-
+	std::cout << "has 5 " << tmp.contains( 5 ) << "\n";
+	std::cout << "has 4 " << tmp.contains( 4 ) << "\n";
 	system( "PAUSE" );
 	return EXIT_SUCCESS;
 }

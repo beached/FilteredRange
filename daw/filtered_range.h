@@ -49,8 +49,37 @@ namespace daw {
 			std::vector<value_type> to_vector( ) const {
 				auto result = std::vector<value_type>( );
 				auto filt_iters = get_filtered_iterators( );
-				for( auto& val : m_value_refs ) {
-					result.push_back( val );
+				for( auto it = filt_iters.first; it != filt_iters.second; ++it ) {
+					result.push_back( *it );
+				}
+				return result;
+			}
+
+			template<typename Iter>
+			void copy_to( Iter first_inclusive, Iter last_exclusive ) const {
+				auto filt_iter = get_filtered_iterators( );
+				auto in_it = filt_iters.first;
+				auto out_it = first_inclusive;
+				while( in_it != filt_iter.second && out_it != last_exclusive ) {
+					*out_it = *in_it;
+					++in_it;
+					++out_it;
+				}
+				return result;
+			}
+
+			FilteredRange clear_where( ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				result.m_pred_include.clear( );
+				return result;
+			}
+
+			template<typename Iter>
+			FilteredRange append( Iter first_inclusive, Iter last_exclusive ) const {
+				auto result = copy_of_me( );
+				for( auto it = first_inclusive; it != last_exclusive; ++it ) {
+					result.m_value_refs.push_back( std::reference_wrapper<value_type>( *it ) );
 				}
 				return result;
 			}
@@ -92,27 +121,67 @@ namespace daw {
 				return retval;
 			}
 
-			FilteredRange clear_where( ) const {
+			template<typename UnaryPredicate>
+				FilteredRange partiton( UnaryPredicate pred ) const {
 				auto result = copy_of_me( );
 				result.do_filter( );
-				result.m_pred_include.clear( );
+				std::partition( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
 				return result;
 			}
 
-			template<typename Iter>
-			FilteredRange append( Iter first_inclusive, Iter last_exclusive ) const {
+			template<typename UnaryPredicate>
+			FilteredRange stable_partiton( UnaryPredicate pred ) const {
 				auto result = copy_of_me( );
-				for( auto it = first_inclusive; it != last_exclusive; ++it ) {
-					result.m_value_refs.push_back( std::reference_wrapper<value_type>( *it ) );
-				}
+				result.do_filter( );
+				std::stable_partition( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
 				return result;
 			}
-			
+
+			FilteredRange reverse( ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				std::reverse( result.m_value_refs.begin( ), result.m_value_refs.end( ), pred );
+				return result;
+			}
+
+			template<typename RandomNumberGenerator>
+			FilteredRange random_shuffle( RandomNumberGenerator rnd ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				std::random_shuffle( result.m_value_refs.begin( ), result.m_value_refs.end( ), rnd );
+				return result;
+			}
+
+			FilteredRange random_shuffle( ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				std::random_shuffle( result.m_value_refs.begin( ), result.m_value_refs.end( ) );
+				return result;
+			}
+
+			template<typename EqualToCompare = std::equal_to<value_type>>
+			bool contains( value_type value, EqualToCompare comp = EqualToCompare( ) ) const {
+				auto result = copy_of_me( );
+				result.do_filter( );
+				for( auto current_value : result.m_value_refs ) {
+					if( comp( value, current_value ) ) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			template<typename Func>
+			FilteredRange& call(Func func) {
+				func( *this );
+				return *this;
+			}
+
 		private:
 			using iter_type = typename std::vector<std::reference_wrapper<value_type>>::iterator;
+
 			using predicate_ref_type = std::function < bool( std::reference_wrapper<value_type> ) > ;
 			using filtered_iterator = boost::filter_iterator < predicate_ref_type, iter_type > ;
-
 			std::vector<std::reference_wrapper<value_type>> m_value_refs;
 			std::vector<predicate_type> m_pred_include;
 
