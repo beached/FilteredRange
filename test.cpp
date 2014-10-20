@@ -27,6 +27,8 @@ int main( int argc, char **arv ) {
 		.append( test_values2.begin( ), test_values2.end( ) )
 		.stable_unique( ).for_each( show_int );
 
+	tmp.where( is_even ).for_each( show_int );
+
 	system( "PAUSE" );
 	return EXIT_SUCCESS;
 }

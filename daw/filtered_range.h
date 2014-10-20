@@ -107,7 +107,7 @@ namespace daw {
 				}
 				return result;
 			}
-
+			
 		private:
 			using iter_type = typename std::vector<std::reference_wrapper<value_type>>::iterator;
 			using predicate_ref_type = std::function < bool( std::reference_wrapper<value_type> ) > ;
