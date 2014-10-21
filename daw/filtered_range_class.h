@@ -63,11 +63,11 @@ namespace daw {
 
 			//////////////////////////////////////////////////////////////////////////
 			/// Summary: Copy all valid values to a std::vector
-			std::vector<value_type> to_vector( ) const {
+			std::vector<value_type> to_vector( ) {
 				auto result = std::vector<value_type>( );
 				auto filt_iters = get_filtered_iterators( );
 				for( auto it = filt_iters.first; it != filt_iters.second; ++it ) {
-					result.push_back( *it );
+					result.push_back( it->get( ) );
 				}
 				return result;
 			}
@@ -76,7 +76,7 @@ namespace daw {
 			/// Summary: Copy all valid values to the provided range up to the
 			/// smallest list.
 			template<typename Iter>
-			void copy_to( Iter first_inclusive, Iter last_exclusive ) const {
+			void copy_to( Iter first_inclusive, Iter last_exclusive ) {
 				auto filt_iter = get_filtered_iterators( );
 				auto in_it = filt_iters.first;
 				auto out_it = first_inclusive;
@@ -359,9 +359,11 @@ namespace daw {
 
 		private:
 			using iter_type = typename std::vector<std::reference_wrapper<value_type>>::iterator;
+			using citer_type = typename std::vector<std::reference_wrapper<value_type>>::const_iterator;
 
 			using predicate_ref_type = std::function < bool( std::reference_wrapper<value_type> ) > ;
 			using filtered_iterator = boost::filter_iterator < predicate_ref_type, iter_type > ;
+			using cfiltered_iterator = boost::filter_iterator < predicate_ref_type, citer_type >;
 			std::vector<std::reference_wrapper<value_type>> m_value_refs;
 			std::vector<predicate_type> m_pred_include;
 
@@ -371,6 +373,14 @@ namespace daw {
 
 			iter_type end( ) {
 				return m_value_refs.end( );
+			}
+
+			citer_type cbegin( ) {
+				return m_value_refs.cbegin( );
+			}
+
+			citer_type cend( ) {
+				return m_value_refs.cend( );
 			}
 
 			FilteredRange copy_of_me( ) const {
@@ -418,6 +428,7 @@ namespace daw {
 				auto filtered_end = filtered_iterator( pred, end( ), end( ) );
 				return std::make_pair( filtered_begin, filtered_end );
 			}
+
 		};	// class FilteredRange
 		
 		
