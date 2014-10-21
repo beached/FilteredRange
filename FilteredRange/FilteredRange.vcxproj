@@ -79,6 +79,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\daw\filtered_range.h" />
+    <ClInclude Include="..\daw\filtered_range_class.h" />
+    <ClInclude Include="..\daw\filtered_range_funcs.h" />
+    <ClInclude Include="..\daw\filtered_range_group.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\test.cpp" />

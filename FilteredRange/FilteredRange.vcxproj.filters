@@ -15,6 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\daw\filtered_range_group.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\daw\filtered_range_funcs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\daw\filtered_range_class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\daw\filtered_range.h">
       <Filter>Header Files</Filter>
     </ClInclude>
