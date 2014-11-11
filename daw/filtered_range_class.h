@@ -45,7 +45,7 @@ namespace daw {
 			//////////////////////////////////////////////////////////////////////////
 			/// Summary: Clears all where predicates
 			FilteredRange clear_where( ) const {
-				auto result = copy_of_me( ).do_filter( );
+				auto result = copy_of_me( );
 				result.m_pred_include.clear( );
 				return result;
 			}
@@ -76,16 +76,14 @@ namespace daw {
 			/// Summary: Copy all valid values to the provided range up to the
 			/// smallest list.
 			template<typename Iter>
-			void copy_to( Iter first_inclusive, Iter last_exclusive ) {
+			FilteredRange copy_to( Iter first_inclusive, Iter last_exclusive ) {				
 				auto filt_iter = get_filtered_iterators( );
-				auto in_it = filt_iters.first;
+				auto in_it = filt_iter.first;
 				auto out_it = first_inclusive;
 				while( in_it != filt_iter.second && out_it != last_exclusive ) {
-					*out_it = *in_it;
-					++in_it;
-					++out_it;
+					*out_it++ = *in_it++;
 				}
-				return result;
+				return copy_of_me( );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -165,8 +163,8 @@ namespace daw {
 			/// necessarily the same as before the call. See stable_partition for a
 			/// function with a similar behavior but with stable ordering within each 
 			/// group.
-			template<typename UnaryPredicate>
-				FilteredRange partiton( UnaryPredicate pred ) const {
+			template<typename UnaryPredicate = std::less<value_type>>
+			FilteredRange partition( UnaryPredicate pred = UnaryPredicate( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::partition( result.begin( ), result.end( ), pred );
 				return result;
@@ -177,8 +175,8 @@ namespace daw {
 			/// all the elements for which pred returns true precede all those for
 			/// which it returns false.  The relative order of elements within each 
 			/// group is preserved.
-			template<typename UnaryPredicate>
-			FilteredRange stable_partiton( UnaryPredicate pred ) const {
+			template<typename UnaryPredicate = std::less<value_type>>
+			FilteredRange stable_partition( UnaryPredicate pred = UnaryPredicate( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
 				std::stable_partition( result.begin( ), result.end( ), pred );
 				return result;
@@ -188,7 +186,7 @@ namespace daw {
 			/// Summary: Reverses the order of the elements in the range
 			FilteredRange reverse( ) const {
 				auto result = copy_of_me( ).do_filter( );
-				std::reverse( result.begin( ), result.end( ), pred );
+				std::reverse( result.begin( ), result.end( ) );
 				return result;
 			}
 
@@ -220,9 +218,13 @@ namespace daw {
 			/// new_value in the range.  By default ituses operator== to compare 
 			/// the elements, otherwise it uses the given binary predicate comp. 
 			template<typename EqualToCompare = std::equal_to<value_type>>
-			FilteredRange replace( value_type old_value, value_type new_value, EqualToCompare comp = EqualToCompare( ) ) const {
+			FilteredRange replace( const value_type& old_value, const value_type& new_value, EqualToCompare comp = EqualToCompare( ) ) const {
 				auto result = copy_of_me( ).do_filter( );
-				std::replace( result.begin( ), result.end( ), old_value, new_value );
+				result.for_each( [&old_value, &new_value, &comp]( value_type& current_value ) {
+					if( comp( old_value, current_value ) ) {
+						current_value = new_value;
+					}
+				} );
 				return result;
 			}
 
